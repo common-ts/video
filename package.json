@@ -1,6 +1,6 @@
 {
   "name": "video-plus",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "description": "video",
   "main": "./lib/index.js",
   "types": "./src/index.ts",
@@ -20,6 +20,8 @@
     "url": "git@github.com/common-ts/video"
   },
   "keywords": [
-    "video"
+    "video",
+    "video plus",
+    "video-plus"
   ]
 }
