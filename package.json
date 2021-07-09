@@ -1,6 +1,6 @@
 {
-  "name": "video-plus",
-  "version": "0.0.3",
+  "name": "video-service",
+  "version": "0.7.0",
   "description": "video",
   "main": "./lib/index.js",
   "types": "./src/index.ts",
@@ -21,7 +21,7 @@
   },
   "keywords": [
     "video",
-    "video plus",
-    "video-plus"
+    "video service",
+    "video-service"
   ]
 }
