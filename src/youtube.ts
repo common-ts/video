@@ -8,9 +8,25 @@ export function calculateDuration(d: string): number {
   }
   const k = d.split('M');
   if (k.length < 2) {
-    return 0;
+    const g = d.split('H');
+    if (g.length < 2) {
+      const a0 = d.substr(2, d.length - 3);
+      const a1 = parseFloat(a0);
+      if (d.endsWith('S')) {
+        return a1;
+      } else {
+        return a1 * 3600;
+      }
+    } else {
+      const a0 = d.substr(2, d.length - 3);
+      const a3 = parseFloat(a0);
+      return a3 * 3600;
+    }
   }
-  const a = k[1].substr(0, k[1].length - 1);
+  let a = k[1].substr(0, k[1].length - 1);
+  if (a.length === 0) {
+    a = '0';
+  }
   const x = k[0].split('H');
   const b = (x.length === 1 ? k[0].substr(2) : x[1]);
   if (!isNaN(a as any) && !isNaN(b as any)) {

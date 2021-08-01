@@ -2,70 +2,12 @@ import {CategorySnippet, Channel, ChannelDetail, ChannelSnippet, ListDetail, Lis
 import {HttpRequest} from './service';
 import {ChannelSync, getNewVideos, notIn, SyncClient, SyncRepository, SyncService} from './sync';
 import {fromYoutubeCategories, fromYoutubeChannels, fromYoutubePlaylist, fromYoutubePlaylists, fromYoutubeVideos} from './youtube';
+export * from './metadata';
 export * from './models';
 export * from './comment';
 export * from './service';
 export * from './youtube';
 export * from './sync';
-
-export const channelMap: StringMap = {
-  publishedat: 'publishedAt',
-  customurl: 'customUrl',
-  localizedtitle: 'localizedTitle',
-  localizeddescription: 'localizedDescription',
-  mediumthumbnail: 'mediumThumbnail',
-  highthumbnail: 'highThumbnail',
-  lastupload: 'lastUpload',
-  itemcount: 'itemCount',
-  playlistcount: 'playlistCount',
-  playlistitemcount: 'playlistItemCount',
-  playlistvideocount: 'playlistVideoCount',
-  playlistvideoitemcount: 'playlistVideoItemCount',
-};
-export const playlistMap: StringMap = {
-  publishedat: 'publishedAt',
-  channelid: 'channelId',
-  channeltitle: 'channelTitle',
-  localizedtitle: 'localizedTitle',
-  localizeddescription: 'localizedDescription',
-  mediumthumbnail: 'mediumThumbnail',
-  highthumbnail: 'highThumbnail',
-  standardthumbnail: 'standardThumbnail',
-  maxresthumbnail: 'maxresThumbnail',
-};
-export const videoMap: StringMap = {
-  publishedat: 'publishedAt',
-  categoryid: 'categoryId',
-  channelid: 'channelId',
-  channeltitle: 'channelTitle',
-  localizedtitle: 'localizedTitle',
-  localizeddescription: 'localizedDescription',
-  mediumthumbnail: 'mediumThumbnail',
-  highthumbnail: 'highThumbnail',
-  standardthumbnail: 'standardThumbnail',
-  maxresthumbnail: 'maxresThumbnail',
-  defaultaudiolanguage: 'defaultAudioLanguage',
-  defaultlanguage: 'defaultLanguage',
-  licensedcontent: 'licensedContent',
-  livebroadcastcontent: 'liveBroadcastContent',
-  blockedregions: 'blockedRegions',
-  allowedregions: 'allowedRegions'
-};
-export const playlistFields = ['id', 'channelId', 'channelTitle', 'description',
-  'highThumbnail', 'localizedDescription', 'localizedTitle',
-  'maxresThumbnail', 'mediumThumbnail', 'publishedAt', 'standardThumbnail',
-  'thumbnail', 'title', 'count', 'itemCount'];
-export const channelFields = ['id', 'count', 'country', 'lastUpload', 'customUrl', 'description',
-  'favorites', 'highThumbnail', 'itemCount', 'likes', 'localizedDescription', 'localizedTitle',
-  'mediumThumbnail', 'publishedat', 'thumbnail', 'title', 'uploads',
-  'count', 'itemCount', 'playlistCount', 'playlistItemCount', 'playlistVideoCount', 'playlistVideoItemCount'
-];
-export const videoFields = [
-  'id', 'caption', 'categoryId', 'channelId', 'channelTitle', 'defaultAudioLanguage',
-  'defaultLanguage', 'definition', 'description', 'dimension', 'duration', 'highThumbnail',
-  'licensedContent', 'liveBroadcastContent', 'localizedDescription', 'localizedTitle', 'maxresThumbnail',
-  'mediumThumbnail', 'projection', 'publishedAt', 'standardThumbnail', 'tags', 'thumbnail', 'title', 'blockedRegions', 'allowedRegions'
-];
 
 export function getLimit(limit?: number, d?: number): number {
   if (limit) {
