@@ -100,6 +100,7 @@ export interface Channel extends ItemInfo {
   playlistItemCount?: number;
   playlistVideoCount?: number;
   playlistVideoItemCount?: number;
+  channels?: string[]|Channel[];
 }
 export interface Playlist extends ItemInfo, BigThumbnail {
   count?: number;
