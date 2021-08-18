@@ -1,4 +1,4 @@
-import {CategorySnippet, Channel, ChannelDetail, ChannelSnippet, Item, ListDetail, ListItem, ListResult, Playlist, PlaylistSnippet, PlaylistVideo, PlaylistVideoSnippet, SearchId, SearchSnippet, StringMap, Video, VideoCategory, VideoItemDetail, VideoSnippet, YoutubeListResult, YoutubeVideoDetail} from './models';
+import {CategorySnippet, Channel, ChannelDetail, ChannelSnippet, ListDetail, ListItem, ListResult, Playlist, PlaylistSnippet, PlaylistVideo, PlaylistVideoSnippet, SubscriptionSnippet, Video, VideoCategory, VideoItemDetail, VideoSnippet, YoutubeListResult, YoutubeVideoDetail} from './models';
 export * from './models';
 export * from './comment';
 
@@ -48,6 +48,9 @@ export function calculateDuration(d: string): number {
 }
 
 export function fromYoutubeCategories(res: YoutubeListResult<ListItem<string, CategorySnippet, any>>): VideoCategory[] {
+  if (!res || !res.items || res.items.length === 0) {
+    return [];
+  }
   return res.items.filter(i => i.snippet).map(item => {
     const snippet = item.snippet;
     const i: VideoCategory = {
@@ -60,6 +63,9 @@ export function fromYoutubeCategories(res: YoutubeListResult<ListItem<string, Ca
   });
 }
 export function fromYoutubeChannels(res: YoutubeListResult<ListItem<string, ChannelSnippet, ChannelDetail>>): Channel[] {
+  if (!res || !res.items || res.items.length === 0) {
+    return [];
+  }
   return res.items.filter(i => i.snippet).map(item => {
     const snippet = item.snippet;
     const thumbnail = snippet.thumbnails;
@@ -87,8 +93,37 @@ export function fromYoutubeChannels(res: YoutubeListResult<ListItem<string, Chan
     return i;
   });
 }
-
+export function fromYoutubeSubscriptions(res: YoutubeListResult<ListItem<string, SubscriptionSnippet, ChannelDetail>>): Channel[] {
+  if (!res || !res.items || res.items.length === 0) {
+    return [];
+  }
+  return res.items.filter(i => i.snippet).map(item => {
+    const snippet = item.snippet;
+    const thumbnail = snippet.thumbnails;
+    const i: Channel = {
+      id: snippet.resourceId.channelId,
+      title: snippet.title,
+      description: snippet.description,
+      publishedAt: new Date(snippet.publishedAt),
+    };
+    if (thumbnail) {
+      i.thumbnail = thumbnail.default ? thumbnail.default.url : undefined;
+      i.mediumThumbnail = thumbnail.medium ? thumbnail.medium.url : undefined;
+      i.highThumbnail = thumbnail.high ? thumbnail.high.url : undefined;
+    }
+    if (item.contentDetails && item.contentDetails.relatedPlaylists) {
+      const r = item.contentDetails.relatedPlaylists;
+      i.likes = r.likes;
+      i.favorites = r.favorites;
+      i.uploads = r.uploads;
+    }
+    return i;
+  });
+}
 export function fromYoutubePlaylists(res: YoutubeListResult<ListItem<string, PlaylistSnippet, ListDetail>>): ListResult<Playlist> {
+  if (!res || !res.items || res.items.length === 0) {
+    return { list: [], total: 0, limit: 0 };
+  }
   const list = res.items.filter(i => i.snippet).map(item => {
     const snippet = item.snippet;
     const thumbnail = snippet.thumbnails;
@@ -114,37 +149,48 @@ export function fromYoutubePlaylists(res: YoutubeListResult<ListItem<string, Pla
   });
   return { list, total: res.pageInfo.totalResults, limit: res.pageInfo.resultsPerPage, nextPageToken: res.nextPageToken };
 }
-export function fromYoutubePlaylist(res: YoutubeListResult<ListItem<string, PlaylistVideoSnippet, VideoItemDetail>>): ListResult<PlaylistVideo> {
+export function fromYoutubePlaylist(res: YoutubeListResult<ListItem<string, PlaylistVideoSnippet, VideoItemDetail>>, compress?: boolean): ListResult<PlaylistVideo> {
+  if (!res || !res.items || res.items.length === 0) {
+    return { list: [], total: 0, limit: 0 };
+  }
   const list = res.items.filter(i => i.snippet).map(item => {
-    const snippet = item.snippet;
-    const thumbnail = snippet.thumbnails;
     const content = item.contentDetails;
-    const i: PlaylistVideo = {
-      title: snippet.title ? snippet.title : '',
-      description: snippet.description ? snippet.description : '',
-      localizedTitle: snippet.localized ? snippet.localized.title : '',
-      localizedDescription: snippet.localized ? snippet.localized.description : '',
-      channelId: snippet.channelId ? snippet.channelId : '',
-      channelTitle: snippet.channelTitle ? snippet.channelTitle : '',
-      id: content ? content.videoId : '',
-      publishedAt: content ? new Date(content.videoPublishedAt) : undefined,
-      playlistId: snippet.playlistId ? snippet.playlistId : '',
-      position: snippet.position ? snippet.position : 0,
-      videoOwnerChannelId: snippet.videoOwnerChannelId ? snippet.videoOwnerChannelId : '',
-      videoOwnerChannelTitle: snippet.videoOwnerChannelTitle ? snippet.videoOwnerChannelTitle : ''
-    };
-    if (thumbnail) {
-      i.thumbnail = thumbnail.default ? thumbnail.default.url : undefined;
-      i.mediumThumbnail = thumbnail.medium ? thumbnail.medium.url : undefined;
-      i.highThumbnail = thumbnail.high ? thumbnail.high.url : undefined;
-      i.standardThumbnail = thumbnail.standard ? thumbnail.standard.url : undefined;
-      i.maxresThumbnail = thumbnail.maxres ? thumbnail.maxres.url : undefined;
+    let i: PlaylistVideo;
+    if (compress) {
+      i = { id: content ? content.videoId : '' };
+    } else {
+      const snippet = item.snippet;
+      const thumbnail = snippet.thumbnails;
+      i = {
+        title: snippet.title ? snippet.title : '',
+        description: snippet.description ? snippet.description : '',
+        localizedTitle: snippet.localized ? snippet.localized.title : '',
+        localizedDescription: snippet.localized ? snippet.localized.description : '',
+        channelId: snippet.channelId ? snippet.channelId : '',
+        channelTitle: snippet.channelTitle ? snippet.channelTitle : '',
+        id: content ? content.videoId : '',
+        publishedAt: content ? new Date(content.videoPublishedAt) : undefined,
+        playlistId: snippet.playlistId ? snippet.playlistId : '',
+        position: snippet.position ? snippet.position : 0,
+        videoOwnerChannelId: snippet.videoOwnerChannelId ? snippet.videoOwnerChannelId : '',
+        videoOwnerChannelTitle: snippet.videoOwnerChannelTitle ? snippet.videoOwnerChannelTitle : ''
+      };
+      if (thumbnail) {
+        i.thumbnail = thumbnail.default ? thumbnail.default.url : undefined;
+        i.mediumThumbnail = thumbnail.medium ? thumbnail.medium.url : undefined;
+        i.highThumbnail = thumbnail.high ? thumbnail.high.url : undefined;
+        i.standardThumbnail = thumbnail.standard ? thumbnail.standard.url : undefined;
+        i.maxresThumbnail = thumbnail.maxres ? thumbnail.maxres.url : undefined;
+      }
     }
     return i;
   });
   return { list, total: res.pageInfo.totalResults, limit: res.pageInfo.resultsPerPage, nextPageToken: res.nextPageToken };
 }
-export function fromYoutubeVideos(res: YoutubeListResult<ListItem<string, VideoSnippet, YoutubeVideoDetail>>): ListResult<Video> {
+export function fromYoutubeVideos(res: YoutubeListResult<ListItem<string, VideoSnippet, YoutubeVideoDetail>>, compress?: boolean): ListResult<Video> {
+  if (!res || !res.items || res.items.length === 0) {
+    return { list: [], total: 0, limit: 0 };
+  }
   const list = res.items.map(item => {
     const snippet = item.snippet;
     const content = item.contentDetails;
@@ -171,7 +217,7 @@ export function fromYoutubeVideos(res: YoutubeListResult<ListItem<string, VideoS
         licensedContent: content.licensedContent,
         projection: content.projection === 'rectangular' ? undefined : '3'
       };
-      if (thumbnail) {
+      if (!compress && thumbnail) {
         i.thumbnail = thumbnail.default ? thumbnail.default.url : undefined;
         i.mediumThumbnail = thumbnail.medium ? thumbnail.medium.url : undefined;
         i.highThumbnail = thumbnail.high ? thumbnail.high.url : undefined;

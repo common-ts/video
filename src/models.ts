@@ -257,3 +257,16 @@ export interface CategorySnippet {
   assignable: boolean;
   channelId: string;
 }
+export interface ChannelSubscriptions {
+  id: string;
+  data: Channel[]|string[];
+}
+export interface SubscriptionSnippet extends Title {
+  title: string;
+  resourceId: SubscriptionResource;
+  thumbnails: Thumbnails;
+}
+export interface SubscriptionResource {
+  kind: string;
+  channelId: string;
+}

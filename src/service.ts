@@ -1,6 +1,9 @@
 import {Comment, CommentThead} from './comment';
 import {Channel, ChannelSM, Item, ItemSM, ListResult, Playlist, PlaylistSM, PlaylistVideo, Video, VideoCategory} from './models';
 
+export interface SubscriptionsService {
+  getSubscriptions(channelId: string, fields?: string[]): Promise<Channel[]>;
+}
 export type CommentOrder = 'time' | 'relevance' | '';
 export type TextFormat = 'html' | 'plainText' | '';
 export interface VideoService {

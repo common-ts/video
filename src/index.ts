@@ -1,7 +1,7 @@
-import {CategorySnippet, Channel, ChannelDetail, ChannelSnippet, ListDetail, ListItem, ListResult, Playlist, PlaylistSnippet, PlaylistVideo, PlaylistVideoSnippet, StringMap, Thumbnail, Title, Video, VideoCategory, VideoItemDetail, VideoSnippet, YoutubeListResult, YoutubeVideoDetail} from './models';
+import {CategorySnippet, Channel, ChannelDetail, ChannelSnippet, ChannelSubscriptions, ListDetail, ListItem, ListResult, Playlist, PlaylistSnippet, PlaylistVideo, PlaylistVideoSnippet, SubscriptionSnippet, Thumbnail, Video, VideoCategory, VideoItemDetail, VideoSnippet, YoutubeListResult, YoutubeVideoDetail} from './models';
 import {HttpRequest} from './service';
 import {ChannelSync, getNewVideos, notIn, SyncClient, SyncRepository, SyncService} from './sync';
-import {fromYoutubeCategories, fromYoutubeChannels, fromYoutubePlaylist, fromYoutubePlaylists, fromYoutubeVideos} from './youtube';
+import {fromYoutubeCategories, fromYoutubeChannels, fromYoutubePlaylist, fromYoutubePlaylists, fromYoutubeSubscriptions, fromYoutubeVideos} from './youtube';
 export * from './metadata';
 export * from './models';
 export * from './comment';
@@ -18,7 +18,14 @@ export function getLimit(limit?: number, d?: number): number {
   }
   return 48;
 }
-
+export class SubscriptionsClient {
+  constructor(private key: string, private httpRequest: HttpRequest) {
+    this.getSubscriptions = this.getSubscriptions.bind(this);
+  }
+  getSubscriptions(channelId: string): Promise<Channel[]> {
+    return getSubcriptionsFromYoutube(this.httpRequest, this.key, channelId);
+  }
+}
 export class CategoryClient {
   constructor(private key: string, private httpRequest: HttpRequest) {
     this.getCagetories = this.getCagetories.bind(this);
@@ -32,7 +39,7 @@ export class CategoryClient {
   }
 }
 export class YoutubeSyncClient implements SyncClient {
-  constructor(private key: string, private httpRequest: HttpRequest) {
+  constructor(private key: string, private httpRequest: HttpRequest, private compress?: boolean) {
     this.getChannels = this.getChannels.bind(this);
     this.getChannel = this.getChannel.bind(this);
     this.getChannelPlaylists = this.getChannelPlaylists.bind(this);
@@ -40,10 +47,14 @@ export class YoutubeSyncClient implements SyncClient {
     this.getPlaylist = this.getPlaylist.bind(this);
     this.getPlaylistVideos = this.getPlaylistVideos.bind(this);
     this.getVideos = this.getVideos.bind(this);
+    this.getSubscriptions = this.getSubscriptions.bind(this);
   }
   private getChannels(ids: string[]): Promise<Channel[]> {
     const url = `https://www.googleapis.com/youtube/v3/channels?key=${this.key}&id=${ids.join(',')}&part=snippet,contentDetails`;
     return this.httpRequest.get<YoutubeListResult<ListItem<string, ChannelSnippet, ChannelDetail>>>(url).then(res => formatThumbnail(fromYoutubeChannels(res)));
+  }
+  getSubscriptions(channelId: string): Promise<Channel[]> {
+    return getSubcriptionsFromYoutube(this.httpRequest, this.key, channelId);
   }
   getChannel(id: string): Promise<Channel> {
     return this.getChannels([id]).then(res => {
@@ -73,9 +84,10 @@ export class YoutubeSyncClient implements SyncClient {
   getPlaylistVideos(playlistId: string, max?: number, nextPageToken?: string): Promise<ListResult<PlaylistVideo>> {
     const maxResults = (max && max > 0 ? max : 50);
     const pageToken = (nextPageToken ? `&pageToken=${nextPageToken}` : '');
-    const url = `https://youtube.googleapis.com/youtube/v3/playlistItems?key=${this.key}&playlistId=${playlistId}&maxResults=${maxResults}${pageToken}&part=snippet,contentDetails`;
+    const part = '&part=contentDetails'; // compress ? '&part=contentDetails' : '&part=snippet,contentDetails';
+    const url = `https://youtube.googleapis.com/youtube/v3/playlistItems?key=${this.key}&id=${playlistId}&maxResults=${maxResults}${pageToken}${part}`;
     return this.httpRequest.get<YoutubeListResult<ListItem<string, PlaylistVideoSnippet, VideoItemDetail>>>(url).then(res => {
-      const r = fromYoutubePlaylist(res);
+      const r = fromYoutubePlaylist(res, true);
       if (r.list) {
         r.list = r.list.filter(i => i.thumbnail);
       }
@@ -89,7 +101,7 @@ export class YoutubeSyncClient implements SyncClient {
     const strSnippet = 'snippet,';
     const url = `https://www.googleapis.com/youtube/v3/videos?key=${this.key}&part=${strSnippet}contentDetails&id=${ids.join(',')}`;
     return this.httpRequest.get<YoutubeListResult<ListItem<string, VideoSnippet, YoutubeVideoDetail>>>(url).then(res => {
-      const r = fromYoutubeVideos(res);
+      const r = fromYoutubeVideos(res, this.compress);
       if (!r || !r.list) {
         return [];
       }
@@ -100,7 +112,7 @@ export class YoutubeSyncClient implements SyncClient {
 export class DefaultSyncService implements SyncService {
   constructor(private client: SyncClient, private repo: SyncRepository, private log?: (msg: any, ctx?: any) => void) {
     this.syncChannel = this.syncChannel.bind(this);
-    this.syncChannels = this.syncChannel.bind(this);
+    this.syncChannels = this.syncChannels.bind(this);
     this.syncPlaylist = this.syncPlaylist.bind(this);
     this.syncPlaylists = this.syncPlaylists.bind(this);
   }
@@ -140,11 +152,6 @@ export async function syncChannel(channelId: string, client: SyncClient, repo: S
       }
     });
     return res;
-  }).catch(err => {
-    if (log) {
-      log(err);
-    }
-    throw err;
   });
 }
 export function checkAndSyncUploads(channel: Channel, channelSync: ChannelSync, client: SyncClient, repo: SyncRepository): Promise<number> {
@@ -155,19 +162,26 @@ export function checkAndSyncUploads(channel: Channel, channelSync: ChannelSync, 
     const timestamp = channelSync ? channelSync.syncTime : undefined;
     const syncVideos = (!channelSync || (channelSync && channelSync.level && channelSync.level >= 2)) ? true : false;
     const syncCollection = (!channelSync || (channelSync && channelSync.level && channelSync.level >= 1)) ? true : false;
-    syncUploads(channel.uploads, client, repo, timestamp).then(r => {
+    return syncUploads(channel.uploads, client, repo, timestamp).then(r => {
       channel.lastUpload = r.timestamp;
       channel.count = r.count;
       channel.itemCount = r.all;
-      syncChannelPlaylists(channel.id, syncVideos, syncCollection, client, repo).then(res => {
+      return syncChannelPlaylists(channel.id, syncVideos, syncCollection, client, repo).then(res => {
         if (syncCollection) {
           channel.playlistCount = res.count;
           channel.playlistItemCount = res.all;
           channel.playlistVideoCount = res.videoCount;
           channel.playlistVideoItemCount = res.allVideoCount;
         }
-        return repo.saveChannel(channel).then(c => {
-          return repo.saveChannelSync({ id: channel.id, syncTime: date, uploads: channel.uploads });
+        return client.getSubscriptions(channel.id).then(sub => {
+          if (sub && sub.length > 0) {
+            channel.channels = sub.map(item => {
+              return item.id;
+            });
+          }
+          return repo.saveChannel(channel).then(c => {
+            return repo.saveChannelSync({ id: channel.id, syncTime: date, uploads: channel.uploads });
+          });
         });
       });
     });
@@ -293,7 +307,7 @@ export async function syncUploads(uploads: string, client: SyncClient, repo: Syn
   }
   return { count: success, all, timestamp: last };
 }
-export function saveVideos(newVideos: PlaylistVideo[], getVideos?: (ids: string[], fields?: string[], noSnippet?: boolean) => Promise<Video[]>, repo?: SyncRepository): Promise<number> {
+export function saveVideos(newVideos: PlaylistVideo[], getVideos?: (ids: string[], fields?: string[]) => Promise<Video[]>, repo?: SyncRepository): Promise<number> {
   if (!newVideos || newVideos.length === 0) {
     return Promise.resolve(0);
   } else {
@@ -318,7 +332,6 @@ export function saveVideos(newVideos: PlaylistVideo[], getVideos?: (ids: string[
     }
   }
 }
-
 export const nothumbnail = 'https://i.ytimg.com/img/no_thumbnail.jpg';
 export function formatThumbnail<T extends Thumbnail>(t: T[]): T[] {
   if (!t) {
@@ -336,4 +349,48 @@ export function formatThumbnail<T extends Thumbnail>(t: T[]): T[] {
     }
   }
   return t;
+}
+export function getSubcriptions(httpRequest: HttpRequest, key: string, channelId?: string, mine?: boolean, max?: number, nextPageToken?: string | number): Promise<ListResult<Channel>> {
+  const maxResults = (max && max > 0 ? max : 4);
+  const pageToken = (nextPageToken ? `&pageToken=${nextPageToken}` : '');
+  const mineStr = (mine ? `&mine=${mine}` : '');
+  const channel = (channelId && channelId.length > 0) ? `&channelId=${channelId}` : '';
+  const url = `https://youtube.googleapis.com/youtube/v3/subscriptions?key=${key}${mineStr}${channel}&maxResults=${maxResults}${pageToken}&part=snippet`;
+  return httpRequest.get<YoutubeListResult<ListItem<string, SubscriptionSnippet, ChannelDetail>>>(url).then(res => {
+    const r: ListResult<Channel> = {
+      list:  fromYoutubeSubscriptions(res),
+      nextPageToken: res.nextPageToken,
+    };
+    return r;
+  });
+}
+export async function getSubcriptionsFromYoutube(httpRequest: HttpRequest, key: string, channelId: string): Promise<Channel[]> {
+  const channels: Channel[] = [];
+  let nextPageToken = '';
+  let count = 0;
+  let allChannelCount = 0;
+  try {
+    while (nextPageToken !== undefined) {
+      const subscriptions = await getSubcriptions(httpRequest, key, channelId, undefined, 2, nextPageToken);
+      count = count + subscriptions.list.length;
+      for (const p of subscriptions.list) {
+        channels.push(p);
+        allChannelCount = allChannelCount + p.count;
+      }
+      nextPageToken = subscriptions.nextPageToken;
+    }
+    const channelSubscriptions: ChannelSubscriptions = {
+      id: channelId,
+      data: channels
+    };
+    return channelSubscriptions.data as Channel[];
+  } catch (err) {
+    if (err) {
+      const channelSubscriptions: ChannelSubscriptions = {
+        id: channelId,
+        data: []
+      };
+      return channelSubscriptions.data as Channel[];
+    }
+  }
 }
