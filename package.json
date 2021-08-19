@@ -1,6 +1,6 @@
 {
   "name": "video-service",
-  "version": "0.7.3",
+  "version": "0.7.4",
   "description": "video",
   "main": "./lib/index.js",
   "types": "./src/index.ts",

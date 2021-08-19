@@ -85,11 +85,11 @@ export class YoutubeSyncClient implements SyncClient {
     const maxResults = (max && max > 0 ? max : 50);
     const pageToken = (nextPageToken ? `&pageToken=${nextPageToken}` : '');
     const part = '&part=contentDetails'; // compress ? '&part=contentDetails' : '&part=snippet,contentDetails';
-    const url = `https://youtube.googleapis.com/youtube/v3/playlistItems?key=${this.key}&id=${playlistId}&maxResults=${maxResults}${pageToken}${part}`;
+    const url = `https://youtube.googleapis.com/youtube/v3/playlistItems?key=${this.key}&playlistId=${playlistId}&maxResults=${maxResults}${pageToken}${part}`;
     return this.httpRequest.get<YoutubeListResult<ListItem<string, PlaylistVideoSnippet, VideoItemDetail>>>(url).then(res => {
       const r = fromYoutubePlaylist(res, true);
       if (r.list) {
-        r.list = r.list.filter(i => i.thumbnail);
+        r.list = r.list.filter(i => i.id);
       }
       return r;
     });
@@ -174,10 +174,8 @@ export function checkAndSyncUploads(channel: Channel, channelSync: ChannelSync, 
           channel.playlistVideoItemCount = res.allVideoCount;
         }
         return client.getSubscriptions(channel.id).then(sub => {
-          if (sub && sub.length > 0) {
-            channel.channels = sub.map(item => {
-              return item.id;
-            });
+          if (sub) {
+            channel.channels = sub.map(item => item.id);
           }
           return repo.saveChannel(channel).then(c => {
             return repo.saveChannelSync({ id: channel.id, syncTime: date, uploads: channel.uploads });
