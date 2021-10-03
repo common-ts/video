@@ -1,4 +1,4 @@
-import {CategorySnippet, Channel, ChannelDetail, ChannelSnippet, ListDetail, ListItem, ListResult, Playlist, PlaylistSnippet, PlaylistVideo, PlaylistVideoSnippet, SubscriptionSnippet, Video, VideoCategory, VideoItemDetail, VideoSnippet, YoutubeListResult, YoutubeVideoDetail} from './models';
+import {Channel, ChannelDetail, ChannelSnippet, ListDetail, ListItem, ListResult, Playlist, PlaylistSnippet, PlaylistVideo, PlaylistVideoSnippet, SubscriptionSnippet, Video, VideoItemDetail, VideoSnippet, YoutubeListResult, YoutubeVideoDetail} from './models';
 export * from './models';
 export * from './comment';
 
@@ -47,21 +47,6 @@ export function calculateDuration(d: string): number {
   return 0;
 }
 
-export function fromYoutubeCategories(res: YoutubeListResult<ListItem<string, CategorySnippet, any>>): VideoCategory[] {
-  if (!res || !res.items || res.items.length === 0) {
-    return [];
-  }
-  return res.items.filter(i => i.snippet).map(item => {
-    const snippet = item.snippet;
-    const i: VideoCategory = {
-      id: item.id,
-      title: snippet.title,
-      assignable: snippet.assignable,
-      channelId: snippet.channelId
-    };
-    return i;
-  });
-}
 export function fromYoutubeChannels(res: YoutubeListResult<ListItem<string, ChannelSnippet, ChannelDetail>>): Channel[] {
   if (!res || !res.items || res.items.length === 0) {
     return [];
