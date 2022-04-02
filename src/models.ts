@@ -2,13 +2,13 @@ export interface StringMap {
   [key: string]: string;
 }
 export interface ListResult<T> {
-  list?: T[];
+  list: T[];
   total?: number;
   limit?: number;
   nextPageToken?: string;
 }
 export type ChannelSortType = 'title' | 'count' | 'date';
-export interface ChannelSM {
+export interface ChannelFilter {
   q?: string;
   sort?: SortType; // date, rating, relevance, title, count (for channels)
   forMine?: boolean;
@@ -22,7 +22,7 @@ export interface ChannelSM {
   topicId?: string;
 }
 export type PlaylistSortType = 'title' | 'count' | 'date';
-export interface PlaylistSM {
+export interface PlaylistFilter {
   q?: string;
   sort?: SortType; // date, rating, relevance, title, count (for channels), viewCount (for live broadcast)
   forMine?: boolean;
@@ -34,19 +34,19 @@ export interface PlaylistSM {
   relevanceLanguage?: string;
   safeSearch?: string; // moderate, none, strict
 }
-export type ChannelType = 'show' | 'any' | '';
-export type EventType = 'completed' | 'live' | 'upcoming' | '';
-export type ItemType = 'video' | 'channel' | 'playlist' | 'any' | '';
-export type Duration = 'long' | 'medium' | 'short' | 'any' | '';
-export type Caption = 'closedCaption' | 'none' | 'any' | '';
-export type Definition = 'high' | 'standard' | 'any' | '';
-export type Dimension = '2d' | '3d' | 'any' | '';
-export type EmbeddableType = 'true' | 'any' | '';
-export type LicenseType = 'creativeCommon' | 'youtube' | 'any' | '';
-export type SyndicatedType = 'true' | 'any' | '';
-export type VideoType = 'movie' | 'episode' | 'any' | '';
-export type SortType = 'rating' | 'date' | 'count' | 'relevance' | 'title' | 'viewCount' | '';
-export interface ItemSM {
+export type ChannelType = 'show' | 'any';
+export type EventType = 'completed' | 'live' | 'upcoming';
+export type ItemType = 'video' | 'channel' | 'playlist' | 'any';
+export type Duration = 'long' | 'medium' | 'short' | 'any';
+export type Caption = 'closedCaption' | 'none' | 'any';
+export type Definition = 'high' | 'standard' | 'any';
+export type Dimension = '2d' | '3d' | 'any';
+export type EmbeddableType = 'true' | 'any';
+export type LicenseType = 'creativeCommon' | 'youtube' | 'any';
+export type SyndicatedType = 'true' | 'any';
+export type VideoType = 'movie' | 'episode' | 'any';
+export type SortType = 'rating' | 'date' | 'count' | 'relevance' | 'title' | 'viewCount';
+export interface ItemFilter {
   q?: string;
   type?: ItemType; // video, channel, playlist
   duration?: Duration; // any, long (more than 20 minutes), medium (from 4 minutes to 20 minutes), short (less than 4 minutes)
@@ -73,13 +73,15 @@ export interface ItemSM {
 }
 export interface Item extends Title, Thumbnail, ChannelInfo {
   kind?: string; // video, channel, playlist
-  id?: string;
+  id: string;
   liveBroadcastContent?: string; // upcoming, live, none
   publishTime: Date;
+  duration?: number;
+  definition?: number; // 0: 144, 1: 240, 2: 360, 3: 480, 4: 720, 5: 1080, 6: 1440, 7: 2160
 }
 export interface ItemInfo extends Title, Thumbnail, ChannelInfo, LocalizedTitle {
   kind?: string;
-  id?: string;
+  id: string;
 }
 export interface VideoCategory {
   id: string;
@@ -100,6 +102,7 @@ export interface Channel extends ItemInfo {
   playlistItemCount?: number;
   playlistVideoCount?: number;
   playlistVideoItemCount?: number;
+  channels?: string[]|Channel[];
 }
 export interface Playlist extends ItemInfo, BigThumbnail {
   count?: number;
@@ -135,10 +138,10 @@ export interface Video extends ItemInfo, BigThumbnail, VideoDetail, VideoInfo {
 export interface VideoDetail {
   duration: number;
   dimension: string;
-  definition: number; // 0: 144, 1: 240, 2: 360, 3: 480, 4: 720, 5: 1080, 6: 1440, 7: 2160
-  caption: boolean;
+  definition?: number; // 0: 144, 1: 240, 2: 360, 3: 480, 4: 720, 5: 1080, 6: 1440, 7: 2160
+  caption?: boolean;
   licensedContent: boolean;
-  projection: string;
+  projection?: string;
 }
 export interface Thumbnail {
   thumbnail?: string;
@@ -164,7 +167,7 @@ export interface Thumbnails {
 export interface Title {
   title?: string;
   description?: string;
-  publishedAt?: Date;
+  publishedAt: Date;
 }
 export interface LocalizedTitle {
   localizedTitle?: string;
@@ -187,7 +190,7 @@ export interface ChannelDetail {
 export interface RelatedPlaylists {
   likes?: string;
   favorites?: string;
-  uploads?: string;
+  uploads: string;
 }
 export interface VideoItemDetail {
   videoId: string;
@@ -213,7 +216,7 @@ export interface BaseSnippet extends Title, ChannelInfo {
 export interface SearchSnippet extends Title, ChannelInfo {
   thumbnails: Thumbnails;
   liveBroadcastContent?: string;
-  publishTime?: Date;
+  publishTime: Date;
 }
 export interface SearchId {
   kind?: string;
@@ -248,8 +251,8 @@ export interface YoutubeListResult<T> extends YoutubeKind {
 export interface ListItem<ID, T, D> extends YoutubeKind {
   id: ID;
   etag?: string;
-  snippet?: T;
-  contentDetails?: D;
+  snippet: T;
+  contentDetails: D;
 }
 export interface CategorySnippet {
   title: string;

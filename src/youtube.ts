@@ -36,7 +36,7 @@ export const youtubeSortMap: StringMap = {
   rank: 'rating',
   count: 'videoCount'
 };
-export function getYoutubeSort(s: string): string {
+export function getYoutubeSort(s?: string): string|undefined {
   if (!s || s.length === 0) {
     return undefined;
   }
@@ -73,7 +73,8 @@ export function fromYoutubeChannels(res: YoutubeListResult<ListItem<string, Chan
       customUrl: snippet.customUrl,
       country: snippet.country,
       localizedTitle: snippet.localized ? snippet.localized.title : '',
-      localizedDescription: snippet.localized ? snippet.localized.description : ''
+      localizedDescription: snippet.localized ? snippet.localized.description : '',
+      uploads: ''
     };
     if (thumbnail) {
       i.thumbnail = thumbnail.default ? thumbnail.default.url : undefined;
@@ -129,7 +130,7 @@ export function fromYoutubePlaylist(res: YoutubeListResult<ListItem<string, Play
       channelId: snippet.channelId ? snippet.channelId : '',
       channelTitle: snippet.channelTitle ? snippet.channelTitle : '',
       id: content ? content.videoId : '',
-      publishedAt: content ? new Date(content.videoPublishedAt) : undefined,
+      publishedAt: new Date(content.videoPublishedAt),
       playlistId: snippet.playlistId ? snippet.playlistId : '',
       position: snippet.position ? snippet.position : 0,
       videoOwnerChannelId: snippet.videoOwnerChannelId ? snippet.videoOwnerChannelId : '',
@@ -151,6 +152,7 @@ export function fromYoutubeSearch(res: YoutubeListResult<ListItem<SearchId, Sear
     const snippet = item.snippet;
     const thumbnail = snippet.thumbnails;
     const i: Item = {
+      id: '',
       title: snippet.title ? snippet.title : '',
       description: snippet.description ? snippet.description : '',
       publishedAt: new Date(snippet.publishedAt),
@@ -221,8 +223,10 @@ export function fromYoutubeVideos(res: YoutubeListResult<ListItem<string, VideoS
       }
       return i;
     } else {
+      const now = new Date();
       const i: Video = {
         id: item.id,
+        publishedAt: now,
         duration: calculateDuration(content.duration),
         dimension: content.dimension,
         definition: content.definition === 'hd' ? 5 : undefined,

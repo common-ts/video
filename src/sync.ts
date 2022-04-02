@@ -25,8 +25,8 @@ export interface SyncRepository {
   getVideoIds(id: string[]): Promise<string[]>;
 }
 export interface SyncClient {
-  getChannel(id: string): Promise<Channel>;
-  getPlaylist(id: string): Promise<Playlist>;
+  getChannel(id: string): Promise<Channel|null|undefined>;
+  getPlaylist(id: string): Promise<Playlist|null|undefined>;
   getChannelPlaylists(channelId: string, max?: number, nextPageToken?: string): Promise<ListResult<Playlist>>;
   getPlaylistVideos(playlistId: string, max?: number, nextPageToken?: string): Promise<ListResult<PlaylistVideo>>;
   getVideos(ids: string[]): Promise<Video[]>;
