@@ -1,5 +1,5 @@
 import { Comment, CommentSnippet, CommentThead, TopLevelCommentSnippet } from './comment';
-import { BigThumbnail, HttpRequest, ListItem, ListResult, Thumbnail, YoutubeListResult } from './models';
+import { BigThumbnail, HttpRequest, Item, ListItem, ListResult, SearchId, SearchSnippet, Thumbnail, YoutubeListResult } from './models';
 import { CommentOrder } from './service';
 
 export interface CacheItem<T> {
@@ -33,25 +33,7 @@ export function removeCache<T>(cache: Cache<T>, max: number): number {
     }
   }
 }
-
-export const nothumbnail = 'https://i.ytimg.com/img/no_thumbnail.jpg';
-export function formatThumbnail<T extends Thumbnail>(t: T[]): T[] {
-  if (!t) {
-    return t;
-  }
-  for (const obj of t) {
-    if (!obj.thumbnail) {
-      obj.thumbnail = nothumbnail;
-    }
-    if (!obj.mediumThumbnail) {
-      obj.mediumThumbnail = nothumbnail;
-    }
-    if (!obj.highThumbnail) {
-      obj.highThumbnail = nothumbnail;
-    }
-  }
-  return t;
-}
+const nothumbnail = 'https://i.ytimg.com/img/no_thumbnail.jpg';
 export function formatBigThumbnail<T extends Thumbnail & BigThumbnail>(t: T[]): T[] {
   if (!t) {
     return t;
@@ -118,6 +100,42 @@ export function formatPublishedAt<T extends PublishedAt>(li: T[]): T[] {
   return li;
 }
 
+export function fromYoutubeSearch(res: YoutubeListResult<ListItem<SearchId, SearchSnippet, any>>): ListResult<Item> {
+  const list = res.items.filter(i => i.snippet).map(item => {
+    const snippet = item.snippet;
+    const thumbnail = snippet.thumbnails;
+    const i: Item = {
+      id: '',
+      title: snippet.title ? snippet.title : '',
+      description: snippet.description ? snippet.description : '',
+      publishedAt: new Date(snippet.publishedAt),
+      channelId: snippet.channelId ? snippet.channelId : '',
+      channelTitle: snippet.channelTitle ? snippet.channelTitle : '',
+      liveBroadcastContent: snippet.liveBroadcastContent,
+      publishTime: new Date(snippet.publishTime),
+    };
+    if (thumbnail) {
+      i.thumbnail = thumbnail.default ? thumbnail.default.url : undefined;
+      i.mediumThumbnail = thumbnail.medium ? thumbnail.medium.url : undefined;
+      i.highThumbnail = thumbnail.high ? thumbnail.high.url : undefined;
+    }
+    const id = item.id;
+    if (id) {
+      if (id.videoId) {
+        i.id = id.videoId;
+        i.kind = 'video';
+      } else if (id.channelId) {
+        i.id = id.channelId;
+        i.kind = 'channel';
+      } else if (id.playlistId) {
+        i.id = id.playlistId;
+        i.kind = 'playlist';
+      }
+    }
+    return i;
+  });
+  return { list, total: res.pageInfo.totalResults, limit: res.pageInfo.resultsPerPage, nextPageToken: res.nextPageToken };
+}
 export function getCommentThreads(request: HttpRequest, key: string, videoId: string, sort?: CommentOrder, max?: number, nextPageToken?: string): Promise<ListResult<CommentThead>> {
   const orderParam = (sort === 'relevance' ? `&order=${sort}` : '');
   const maxResults = (max && max > 0 ? max : 20); // maximum is 50

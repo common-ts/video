@@ -1,6 +1,5 @@
-import { formatThumbnail } from './common-client';
 import { Channel, ChannelDetail, ChannelSnippet, HttpRequest, ListDetail, ListItem, ListResult, Playlist, PlaylistSnippet, PlaylistVideo, PlaylistVideoSnippet, SyncListResult, Video, VideoCategory, VideoItemDetail, VideoSnippet, YoutubeListResult, YoutubeVideoDetail } from './models';
-import { fromYoutubeChannels, fromYoutubePlaylist, fromYoutubePlaylists, fromYoutubeVideos } from './youtube';
+import { formatThumbnail, fromYoutubeChannels, fromYoutubePlaylist, fromYoutubePlaylists, fromYoutubeVideos } from './youtube';
 
 export interface ChannelSync {
   id: string;

@@ -1,5 +1,23 @@
-import {CategorySnippet, Channel, ChannelDetail, ChannelSnippet, HttpRequest, Item, ListDetail, ListItem, ListResult, Playlist, PlaylistSnippet, PlaylistVideo, PlaylistVideoSnippet, SearchId, SearchSnippet, StringMap, SyncListResult, Video, VideoCategory, VideoItemDetail, VideoSnippet, YoutubeListResult, YoutubeVideoDetail} from './models';
+import {CategorySnippet, Channel, ChannelDetail, ChannelSnippet, HttpRequest, ListDetail, ListItem, ListResult, Playlist, PlaylistSnippet, PlaylistVideo, PlaylistVideoSnippet, StringMap, SyncListResult, Thumbnail, Video, VideoCategory, VideoItemDetail, VideoSnippet, YoutubeListResult, YoutubeVideoDetail} from './models';
 
+export const nothumbnail = 'https://i.ytimg.com/img/no_thumbnail.jpg';
+export function formatThumbnail<T extends Thumbnail>(t: T[]): T[] {
+  if (!t) {
+    return t;
+  }
+  for (const obj of t) {
+    if (!obj.thumbnail) {
+      obj.thumbnail = nothumbnail;
+    }
+    if (!obj.mediumThumbnail) {
+      obj.mediumThumbnail = nothumbnail;
+    }
+    if (!obj.highThumbnail) {
+      obj.highThumbnail = nothumbnail;
+    }
+  }
+  return t;
+}
 export function calculateDuration(d: string): number {
   if (!d) {
     return 0;
@@ -223,42 +241,6 @@ export function fromYoutubeVideos(res: YoutubeListResult<ListItem<string, VideoS
       }
       return i;
     }
-  });
-  return { list, total: res.pageInfo.totalResults, limit: res.pageInfo.resultsPerPage, nextPageToken: res.nextPageToken };
-}
-export function fromYoutubeSearch(res: YoutubeListResult<ListItem<SearchId, SearchSnippet, any>>): ListResult<Item> {
-  const list = res.items.filter(i => i.snippet).map(item => {
-    const snippet = item.snippet;
-    const thumbnail = snippet.thumbnails;
-    const i: Item = {
-      id: '',
-      title: snippet.title ? snippet.title : '',
-      description: snippet.description ? snippet.description : '',
-      publishedAt: new Date(snippet.publishedAt),
-      channelId: snippet.channelId ? snippet.channelId : '',
-      channelTitle: snippet.channelTitle ? snippet.channelTitle : '',
-      liveBroadcastContent: snippet.liveBroadcastContent,
-      publishTime: new Date(snippet.publishTime),
-    };
-    if (thumbnail) {
-      i.thumbnail = thumbnail.default ? thumbnail.default.url : undefined;
-      i.mediumThumbnail = thumbnail.medium ? thumbnail.medium.url : undefined;
-      i.highThumbnail = thumbnail.high ? thumbnail.high.url : undefined;
-    }
-    const id = item.id;
-    if (id) {
-      if (id.videoId) {
-        i.id = id.videoId;
-        i.kind = 'video';
-      } else if (id.channelId) {
-        i.id = id.channelId;
-        i.kind = 'channel';
-      } else if (id.playlistId) {
-        i.id = id.playlistId;
-        i.kind = 'playlist';
-      }
-    }
-    return i;
   });
   return { list, total: res.pageInfo.totalResults, limit: res.pageInfo.resultsPerPage, nextPageToken: res.nextPageToken };
 }

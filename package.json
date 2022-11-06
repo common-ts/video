@@ -1,6 +1,6 @@
 {
   "name": "video-clients",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "video",
   "main": "./lib/index.js",
   "types": "./src/index.ts",
