@@ -40,18 +40,18 @@ export interface PlaylistFilter {
   relevanceLanguage?: string;
   safeSearch?: string; // moderate, none, strict
 }
-export type ChannelType = 'show' | 'any' | '';
-export type EventType = 'completed' | 'live' | 'upcoming' | '';
-export type ItemType = 'video' | 'channel' | 'playlist' | 'any' | '';
-export type Duration = 'long' | 'medium' | 'short' | 'any' | '';
-export type Caption = 'closedCaption' | 'none' | 'any' | '';
-export type Definition = 'high' | 'standard' | 'any' | '';
-export type Dimension = '2d' | '3d' | 'any' | '';
-export type EmbeddableType = 'true' | 'any' | '';
-export type LicenseType = 'creativeCommon' | 'youtube' | 'any' | '';
-export type SyndicatedType = 'true' | 'any' | '';
-export type VideoType = 'movie' | 'episode' | 'any' | '';
-export type SortType = 'rating' | 'date' | 'count' | 'relevance' | 'title' | 'viewCount' | '';
+export type ChannelType = 'show' | 'any';
+export type EventType = 'completed' | 'live' | 'upcoming';
+export type ItemType = 'video' | 'channel' | 'playlist' | 'any';
+export type Duration = 'long' | 'medium' | 'short' | 'any';
+export type Caption = 'closedCaption' | 'none' | 'any';
+export type Definition = 'high' | 'standard' | 'any';
+export type Dimension = '2d' | '3d' | 'any';
+export type EmbeddableType = 'true' | 'any';
+export type LicenseType = 'creativeCommon' | 'youtube' | 'any';
+export type SyndicatedType = 'true' | 'any';
+export type VideoType = 'movie' | 'episode' | 'any';
+export type SortType = 'rating' | 'date' | 'count' | 'relevance' | 'title' | 'viewCount';
 export interface ItemFilter {
   q?: string;
   type?: ItemType; // video, channel, playlist
