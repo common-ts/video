@@ -1,23 +1,5 @@
 import {CategorySnippet, Channel, ChannelDetail, ChannelSnippet, HttpRequest, ListDetail, ListItem, ListResult, Playlist, PlaylistSnippet, PlaylistVideo, PlaylistVideoSnippet, StringMap, SyncListResult, Thumbnail, Video, VideoCategory, VideoItemDetail, VideoSnippet, YoutubeListResult, YoutubeVideoDetail} from './models';
 
-export const nothumbnail = 'https://i.ytimg.com/img/no_thumbnail.jpg';
-export function formatThumbnail<T extends Thumbnail>(t: T[]): T[] {
-  if (!t) {
-    return t;
-  }
-  for (const obj of t) {
-    if (!obj.thumbnail) {
-      obj.thumbnail = nothumbnail;
-    }
-    if (!obj.mediumThumbnail) {
-      obj.mediumThumbnail = nothumbnail;
-    }
-    if (!obj.highThumbnail) {
-      obj.highThumbnail = nothumbnail;
-    }
-  }
-  return t;
-}
 export function calculateDuration(d: string): number {
   if (!d) {
     return 0;
@@ -61,25 +43,6 @@ export function calculateDuration(d: string): number {
     }
   }
   return 0;
-}
-// date, rating, relevance, title, videoCount (for channels), viewCount (for live broadcast) => title, date => publishedAt, relevance => rank, count => videoCount
-export const youtubeSortMap: StringMap = {
-  publishedAt: 'date',
-  rank: 'rating',
-  count: 'videoCount'
-};
-export function getYoutubeSort(s?: string): string|undefined {
-  if (!s || s.length === 0) {
-    return undefined;
-  }
-  const s2 = youtubeSortMap[s];
-  if (s2) {
-    return s2;
-  }
-  if (s === 'date' || s === 'rating' || s === 'title' || s === 'videoCount' || s === 'viewCount') { // s === 'relevance'
-    return s;
-  }
-  return undefined;
 }
 export function fromYoutubeCategories(res: YoutubeListResult<ListItem<string, CategorySnippet, any>>): VideoCategory[] {
   return res.items.filter(i => i.snippet).map(item => {
@@ -257,4 +220,42 @@ export function getSubcriptions(request: HttpRequest, key: string, channelId?: s
     };
     return r;
   });
+}
+
+// date, rating, relevance, title, videoCount (for channels), viewCount (for live broadcast) => title, date => publishedAt, relevance => rank, count => videoCount
+export const youtubeSortMap: StringMap = {
+  publishedAt: 'date',
+  rank: 'rating',
+  count: 'videoCount'
+};
+export function getYoutubeSort(s?: string): string|undefined {
+  if (!s || s.length === 0) {
+    return undefined;
+  }
+  const s2 = youtubeSortMap[s];
+  if (s2) {
+    return s2;
+  }
+  if (s === 'date' || s === 'rating' || s === 'title' || s === 'videoCount' || s === 'viewCount') { // s === 'relevance'
+    return s;
+  }
+  return undefined;
+}
+export const nothumbnail = 'https://i.ytimg.com/img/no_thumbnail.jpg';
+export function formatThumbnail<T extends Thumbnail>(t: T[]): T[] {
+  if (!t) {
+    return t;
+  }
+  for (const obj of t) {
+    if (!obj.thumbnail) {
+      obj.thumbnail = nothumbnail;
+    }
+    if (!obj.mediumThumbnail) {
+      obj.mediumThumbnail = nothumbnail;
+    }
+    if (!obj.highThumbnail) {
+      obj.highThumbnail = nothumbnail;
+    }
+  }
+  return t;
 }
