@@ -7,6 +7,12 @@ export interface ListResult<T> {
   limit?: number;
   nextPageToken?: string;
 }
+export interface SyncListResult<T> {
+  list: T[];
+  total: number;
+  limit?: number;
+  nextPageToken?: string;
+}
 export type ChannelSortType = 'title' | 'count' | 'date';
 export interface ChannelFilter {
   q?: string;
@@ -34,18 +40,18 @@ export interface PlaylistFilter {
   relevanceLanguage?: string;
   safeSearch?: string; // moderate, none, strict
 }
-export type ChannelType = 'show' | 'any';
-export type EventType = 'completed' | 'live' | 'upcoming';
-export type ItemType = 'video' | 'channel' | 'playlist' | 'any';
-export type Duration = 'long' | 'medium' | 'short' | 'any';
-export type Caption = 'closedCaption' | 'none' | 'any';
-export type Definition = 'high' | 'standard' | 'any';
-export type Dimension = '2d' | '3d' | 'any';
-export type EmbeddableType = 'true' | 'any';
-export type LicenseType = 'creativeCommon' | 'youtube' | 'any';
-export type SyndicatedType = 'true' | 'any';
-export type VideoType = 'movie' | 'episode' | 'any';
-export type SortType = 'rating' | 'date' | 'count' | 'relevance' | 'title' | 'viewCount';
+export type ChannelType = 'show' | 'any' | '';
+export type EventType = 'completed' | 'live' | 'upcoming' | '';
+export type ItemType = 'video' | 'channel' | 'playlist' | 'any' | '';
+export type Duration = 'long' | 'medium' | 'short' | 'any' | '';
+export type Caption = 'closedCaption' | 'none' | 'any' | '';
+export type Definition = 'high' | 'standard' | 'any' | '';
+export type Dimension = '2d' | '3d' | 'any' | '';
+export type EmbeddableType = 'true' | 'any' | '';
+export type LicenseType = 'creativeCommon' | 'youtube' | 'any' | '';
+export type SyndicatedType = 'true' | 'any' | '';
+export type VideoType = 'movie' | 'episode' | 'any' | '';
+export type SortType = 'rating' | 'date' | 'count' | 'relevance' | 'title' | 'viewCount' | '';
 export interface ItemFilter {
   q?: string;
   type?: ItemType; // video, channel, playlist
@@ -257,5 +263,18 @@ export interface ListItem<ID, T, D> extends YoutubeKind {
 export interface CategorySnippet {
   title: string;
   assignable: boolean;
+  channelId: string;
+}
+export interface ChannelSubscriptions {
+  id: string;
+  data: Channel[]|string[];
+}
+export interface SubscriptionSnippet extends Title {
+  title: string;
+  resourceId: SubscriptionResource;
+  thumbnails: Thumbnails;
+}
+export interface SubscriptionResource {
+  kind: string;
   channelId: string;
 }
