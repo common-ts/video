@@ -1,6 +1,4 @@
-import {CategorySnippet, Channel, ChannelDetail, ChannelSnippet, Item, ListDetail, ListItem, ListResult, Playlist, PlaylistSnippet, PlaylistVideo, PlaylistVideoSnippet, SearchId, SearchSnippet, StringMap, Video, VideoCategory, VideoItemDetail, VideoSnippet, YoutubeListResult, YoutubeVideoDetail} from './models';
-export * from './models';
-export * from './comment';
+import {CategorySnippet, Channel, ChannelDetail, ChannelSnippet, HttpRequest, Item, ListDetail, ListItem, ListResult, Playlist, PlaylistSnippet, PlaylistVideo, PlaylistVideoSnippet, SearchId, SearchSnippet, StringMap, SyncListResult, Video, VideoCategory, VideoItemDetail, VideoSnippet, YoutubeListResult, YoutubeVideoDetail} from './models';
 
 export function calculateDuration(d: string): number {
   if (!d) {
@@ -8,9 +6,25 @@ export function calculateDuration(d: string): number {
   }
   const k = d.split('M');
   if (k.length < 2) {
-    return 0;
+    const g = d.split('H');
+    if (g.length < 2) {
+      const a0 = d.substr(2, d.length - 3);
+      const a1 = parseFloat(a0);
+      if (d.endsWith('S')) {
+        return a1;
+      } else {
+        return a1 * 3600;
+      }
+    } else {
+      const a0 = d.substr(2, d.length - 3);
+      const a3 = parseFloat(a0);
+      return a3 * 3600;
+    }
   }
-  const a = k[1].substr(0, k[1].length - 1);
+  let a = k[1].substr(0, k[1].length - 1);
+  if (a.length === 0) {
+    a = '0';
+  }
   const x = k[0].split('H');
   const b = (x.length === 1 ? k[0].substr(2) : x[1]);
   if (!isNaN(a as any) && !isNaN(b as any)) {
@@ -62,6 +76,9 @@ export function fromYoutubeCategories(res: YoutubeListResult<ListItem<string, Ca
   });
 }
 export function fromYoutubeChannels(res: YoutubeListResult<ListItem<string, ChannelSnippet, ChannelDetail>>): Channel[] {
+  if (!res || !res.items || res.items.length === 0) {
+    return [];
+  }
   return res.items.filter(i => i.snippet).map(item => {
     const snippet = item.snippet;
     const thumbnail = snippet.thumbnails;
@@ -73,8 +90,7 @@ export function fromYoutubeChannels(res: YoutubeListResult<ListItem<string, Chan
       customUrl: snippet.customUrl,
       country: snippet.country,
       localizedTitle: snippet.localized ? snippet.localized.title : '',
-      localizedDescription: snippet.localized ? snippet.localized.description : '',
-      uploads: ''
+      localizedDescription: snippet.localized ? snippet.localized.description : ''
     };
     if (thumbnail) {
       i.thumbnail = thumbnail.default ? thumbnail.default.url : undefined;
@@ -91,7 +107,10 @@ export function fromYoutubeChannels(res: YoutubeListResult<ListItem<string, Chan
   });
 }
 
-export function fromYoutubePlaylists(res: YoutubeListResult<ListItem<string, PlaylistSnippet, ListDetail>>): ListResult<Playlist> {
+export function fromYoutubePlaylists(res: YoutubeListResult<ListItem<string, PlaylistSnippet, ListDetail>>): SyncListResult<Playlist> {
+  if (!res || !res.items || res.items.length === 0) {
+    return { list: [], total: 0, limit: 0 };
+  }
   const list = res.items.filter(i => i.snippet).map(item => {
     const snippet = item.snippet;
     const thumbnail = snippet.thumbnails;
@@ -117,7 +136,7 @@ export function fromYoutubePlaylists(res: YoutubeListResult<ListItem<string, Pla
   });
   return { list, total: res.pageInfo.totalResults, limit: res.pageInfo.resultsPerPage, nextPageToken: res.nextPageToken };
 }
-export function fromYoutubePlaylist(res: YoutubeListResult<ListItem<string, PlaylistVideoSnippet, VideoItemDetail>>): ListResult<PlaylistVideo> {
+export function fromYoutubePlaylist(res: YoutubeListResult<ListItem<string, PlaylistVideoSnippet, VideoItemDetail>>): SyncListResult<PlaylistVideo> {
   const list = res.items.filter(i => i.snippet).map(item => {
     const snippet = item.snippet;
     const thumbnail = snippet.thumbnails;
@@ -142,42 +161,6 @@ export function fromYoutubePlaylist(res: YoutubeListResult<ListItem<string, Play
       i.highThumbnail = thumbnail.high ? thumbnail.high.url : undefined;
       i.standardThumbnail = thumbnail.standard ? thumbnail.standard.url : undefined;
       i.maxresThumbnail = thumbnail.maxres ? thumbnail.maxres.url : undefined;
-    }
-    return i;
-  });
-  return { list, total: res.pageInfo.totalResults, limit: res.pageInfo.resultsPerPage, nextPageToken: res.nextPageToken };
-}
-export function fromYoutubeSearch(res: YoutubeListResult<ListItem<SearchId, SearchSnippet, any>>): ListResult<Item> {
-  const list = res.items.filter(i => i.snippet).map(item => {
-    const snippet = item.snippet;
-    const thumbnail = snippet.thumbnails;
-    const i: Item = {
-      id: '',
-      title: snippet.title ? snippet.title : '',
-      description: snippet.description ? snippet.description : '',
-      publishedAt: new Date(snippet.publishedAt),
-      channelId: snippet.channelId ? snippet.channelId : '',
-      channelTitle: snippet.channelTitle ? snippet.channelTitle : '',
-      liveBroadcastContent: snippet.liveBroadcastContent,
-      publishTime: new Date(snippet.publishTime),
-    };
-    if (thumbnail) {
-      i.thumbnail = thumbnail.default ? thumbnail.default.url : undefined;
-      i.mediumThumbnail = thumbnail.medium ? thumbnail.medium.url : undefined;
-      i.highThumbnail = thumbnail.high ? thumbnail.high.url : undefined;
-    }
-    const id = item.id;
-    if (id) {
-      if (id.videoId) {
-        i.id = id.videoId;
-        i.kind = 'video';
-      } else if (id.channelId) {
-        i.id = id.channelId;
-        i.kind = 'channel';
-      } else if (id.playlistId) {
-        i.id = id.playlistId;
-        i.kind = 'playlist';
-      }
     }
     return i;
   });
@@ -242,4 +225,54 @@ export function fromYoutubeVideos(res: YoutubeListResult<ListItem<string, VideoS
     }
   });
   return { list, total: res.pageInfo.totalResults, limit: res.pageInfo.resultsPerPage, nextPageToken: res.nextPageToken };
+}
+export function fromYoutubeSearch(res: YoutubeListResult<ListItem<SearchId, SearchSnippet, any>>): ListResult<Item> {
+  const list = res.items.filter(i => i.snippet).map(item => {
+    const snippet = item.snippet;
+    const thumbnail = snippet.thumbnails;
+    const i: Item = {
+      id: '',
+      title: snippet.title ? snippet.title : '',
+      description: snippet.description ? snippet.description : '',
+      publishedAt: new Date(snippet.publishedAt),
+      channelId: snippet.channelId ? snippet.channelId : '',
+      channelTitle: snippet.channelTitle ? snippet.channelTitle : '',
+      liveBroadcastContent: snippet.liveBroadcastContent,
+      publishTime: new Date(snippet.publishTime),
+    };
+    if (thumbnail) {
+      i.thumbnail = thumbnail.default ? thumbnail.default.url : undefined;
+      i.mediumThumbnail = thumbnail.medium ? thumbnail.medium.url : undefined;
+      i.highThumbnail = thumbnail.high ? thumbnail.high.url : undefined;
+    }
+    const id = item.id;
+    if (id) {
+      if (id.videoId) {
+        i.id = id.videoId;
+        i.kind = 'video';
+      } else if (id.channelId) {
+        i.id = id.channelId;
+        i.kind = 'channel';
+      } else if (id.playlistId) {
+        i.id = id.playlistId;
+        i.kind = 'playlist';
+      }
+    }
+    return i;
+  });
+  return { list, total: res.pageInfo.totalResults, limit: res.pageInfo.resultsPerPage, nextPageToken: res.nextPageToken };
+}
+export function getSubcriptions(request: HttpRequest, key: string, channelId?: string, mine?: boolean, max?: number, nextPageToken?: string | number): Promise<ListResult<Channel>> {
+  const maxResults = (max && max > 0 ? max : 4);
+  const pageToken = (nextPageToken ? `&pageToken=${nextPageToken}` : '');
+  const mineStr = (mine ? `&mine=${mine}` : '');
+  const channel = (channelId && channelId.length > 0) ? `&channelId=${channelId}` : '';
+  const url = `https://youtube.googleapis.com/youtube/v3/subscriptions?key=${key}${mineStr}${channel}&maxResults=${maxResults}${pageToken}&part=snippet`;
+  return request.get<YoutubeListResult<ListItem<string, ChannelSnippet, ChannelDetail>>>(url).then(res => {
+    const r: ListResult<Channel> = {
+      list:  fromYoutubeChannels(res),
+      nextPageToken: res.nextPageToken,
+    };
+    return r;
+  });
 }

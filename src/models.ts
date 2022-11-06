@@ -1,3 +1,9 @@
+export interface Headers {
+  [key: string]: any;
+}
+export interface HttpRequest {
+  get<T>(url: string, options?: { headers?: Headers }): Promise<T>;
+}
 export interface StringMap {
   [key: string]: string;
 }
