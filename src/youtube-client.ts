@@ -1,9 +1,28 @@
 import { Comment, CommentThead } from './comment';
 import { Cache, formatBigThumbnail, fromYoutubeSearch, getComments, getCommentThreads, removeCache } from './common-client';
-import { CategorySnippet, Channel, ChannelDetail, ChannelFilter, ChannelSnippet, HttpRequest, Item, ItemFilter, ListDetail, ListItem, ListResult, Playlist, PlaylistFilter, PlaylistSnippet, PlaylistVideo, PlaylistVideoSnippet, SearchId, SearchSnippet, Video, VideoCategory, VideoItemDetail, VideoSnippet, YoutubeListResult, YoutubeVideoDetail } from './models';
+import { CategorySnippet, Channel, ChannelDetail, ChannelFilter, ChannelSnippet, HttpRequest, Item, ItemFilter, ListDetail, ListItem, ListResult, Playlist, PlaylistFilter, PlaylistSnippet, PlaylistVideo, PlaylistVideoSnippet, SearchId, SearchSnippet, StringMap, Video, VideoCategory, VideoItemDetail, VideoSnippet, YoutubeListResult, YoutubeVideoDetail } from './models';
 import { CommentOrder, VideoService } from './service';
-import { formatThumbnail, fromYoutubeCategories, fromYoutubeChannels, fromYoutubePlaylist, fromYoutubePlaylists, fromYoutubeVideos, getYoutubeSort } from './youtube';
+import { formatThumbnail, fromYoutubeCategories, fromYoutubeChannels, fromYoutubePlaylist, fromYoutubePlaylists, fromYoutubeVideos } from './youtube';
 
+// date, rating, relevance, title, videoCount (for channels), viewCount (for live broadcast) => title, date => publishedAt, relevance => rank, count => videoCount
+export const youtubeSortMap: StringMap = {
+  publishedAt: 'date',
+  rank: 'rating',
+  count: 'videoCount'
+};
+export function getYoutubeSort(s?: string): string|undefined {
+  if (!s || s.length === 0) {
+    return undefined;
+  }
+  const s2 = youtubeSortMap[s];
+  if (s2) {
+    return s2;
+  }
+  if (s === 'date' || s === 'rating' || s === 'title' || s === 'videoCount' || s === 'viewCount') { // s === 'relevance'
+    return s;
+  }
+  return undefined;
+}
 export class YoutubeClient implements VideoService {
   private channelCache: Cache<Channel>;
   private playlistCache: Cache<Playlist>;
@@ -211,12 +230,9 @@ export class YoutubeClient implements VideoService {
     });
   }
   getRelatedVideos(videoId: string, max?: number, nextPageToken?: string): Promise<ListResult<Item>> {
-    return this.getPopularVideos('US').then(list => list as any);
-    /*
     const maxResults = (max && max > 0 ? max : 24);
     const pageToken = (nextPageToken ? `&pageToken=${nextPageToken}` : '');
     const url = `https://youtube.googleapis.com/youtube/v3/search?key=${this.key}&relatedToVideoId=${videoId}&type=video&regionCode=VN&maxResults=${maxResults}${pageToken}&part=snippet`;
     return this.httpRequest.get<YoutubeListResult<ListItem<SearchId, SearchSnippet, any>>>(url).then(res => fromYoutubeSearch(res));
-    */
   }
 }
